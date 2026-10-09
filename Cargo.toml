@@ -1,0 +1,18 @@
+[package]
+name = "demo-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[lints.clippy]
+pedantic = "warn"
+# cargo = "warn"
+
+# restriction lints
+as_conversions = "warn"
+clone_on_ref_ptr = "warn"
+create_dir = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+str_to_string = "warn"
