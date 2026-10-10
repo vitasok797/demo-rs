@@ -3,6 +3,9 @@ name = "demo-rs"
 version = "0.1.0"
 edition = "2024"
 
+[profile.dev-static]
+inherits = "dev"
+
 [profile.release-static]
 inherits = "release"
 
