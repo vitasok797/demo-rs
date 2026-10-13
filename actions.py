@@ -367,10 +367,32 @@ class ProfileSelectAction(BaseAction):
             return profile
 
 
+class DepsAction(BaseAction):
+    PROMPT_SHORTCUT = 'dep'
+    DESC = 'Display a dependency graph'
+
+    def execute(self) -> None:
+        print('Dependency graph:\n')
+        command = 'cargo tree'
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                error_exception=ActionError,
+                )
+
+        print('\nDuplicates:\n')
+        command = 'cargo tree --duplicates'
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                error_exception=ActionError,
+                )
+
+
 class CleanAction(BaseAction):
     PROMPT_SHORTCUT = 'cl'
     CLI_COMMAND = 'clean'
-    DESC = 'Clean'
+    DESC = 'Clean generated artifacts'
 
     def execute(self) -> None:
         print('Cleaning up...')
@@ -511,7 +533,7 @@ class HelpAction(BaseAction):
 
     def execute(self) -> None:
         for action in self.manager.actions:
-            print(f'  {action.PROMPT_SHORTCUT:2}  {action.DESC}')
+            print(f'  {action.PROMPT_SHORTCUT}\t{action.DESC}')
 
 
 def start_interactive_mode() -> None:
