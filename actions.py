@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 IS_WINDOWS = (sys.platform == 'win32')
-ROOT_DIR = Path().resolve()
+ROOT_DIR = Path(__file__).parent.resolve()
 PROFILES = ['dev', 'release', 'dev-static', 'release-static']
 DEFAULT_PROFILE = 'dev'
 
@@ -232,6 +232,9 @@ class BaseAction:
     def _cli_add_args(self, subparser: argparse.ArgumentParser) -> None:
         pass
 
+    def is_active(self) -> bool:
+        return True
+
     def execute(self, **kwargs: Any) -> None:
         pass
 
@@ -243,7 +246,9 @@ class BaseActionManager:
         self.active_profile = DEFAULT_PROFILE
 
     def _init_actions(self) -> None:
-        self.actions = [ActionClass() for ActionClass in BaseAction.__subclasses__()]
+        actions = [ActionClass() for ActionClass in BaseAction.__subclasses__()]
+        self.actions = [action for action in actions if action.is_active()]
+
         for action in self.actions:
             action.manager = self
 
@@ -367,62 +372,6 @@ class ProfileSelectAction(BaseAction):
             return profile
 
 
-class DepsAction(BaseAction):
-    PROMPT_SHORTCUT = 'dep'
-    DESC = 'Display a dependency graph'
-
-    def execute(self) -> None:
-        print('Dependency graph:\n')
-        command = 'cargo tree'
-        Console.run_shell_command(
-                command=command,
-                cwd=ROOT_DIR,
-                error_exception=ActionError,
-                )
-
-        print('\nDuplicates:\n')
-        command = 'cargo tree --duplicates'
-        Console.run_shell_command(
-                command=command,
-                cwd=ROOT_DIR,
-                error_exception=ActionError,
-                )
-
-
-class CleanAction(BaseAction):
-    PROMPT_SHORTCUT = 'cl'
-    CLI_COMMAND = 'clean'
-    DESC = 'Clean generated artifacts'
-
-    def execute(self) -> None:
-        print('Cleaning up...')
-
-        command = 'cargo clean'
-
-        Console.run_shell_command(
-                command=command,
-                cwd=ROOT_DIR,
-                error_exception=ActionError,
-                )
-
-
-class FormatAction(BaseAction):
-    PROMPT_SHORTCUT = 'f'
-    CLI_COMMAND = 'fmt'
-    DESC = 'Format'
-
-    def execute(self) -> None:
-        print('Formatting...')
-
-        command = 'cargo fmt'
-
-        Console.run_shell_command(
-                command=command,
-                cwd=ROOT_DIR,
-                error_exception=ActionError,
-                )
-
-
 def get_build_env_for_profile(profile: str) -> Mapping[str, str]:
     env = os.environ.copy()
     if profile.endswith('-static'):
@@ -509,6 +458,112 @@ class RunTestsAction(BaseAction):
                 cwd=ROOT_DIR,
                 error_exception=ActionError,
                 )
+
+
+class CleanAction(BaseAction):
+    PROMPT_SHORTCUT = 'cl'
+    CLI_COMMAND = 'clean'
+    DESC = 'Clean generated artifacts'
+
+    def execute(self) -> None:
+        print('Cleaning up...')
+
+        command = 'cargo clean'
+
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                error_exception=ActionError,
+                )
+
+
+class DepsDisplayAction(BaseAction):
+    PROMPT_SHORTCUT = 'dep'
+    DESC = 'Display dependency graph'
+
+    def execute(self) -> None:
+        print('Dependency graph:\n')
+        command = 'cargo tree'
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                error_exception=ActionError,
+                )
+
+        print('\nDuplicates:\n')
+        command = 'cargo tree --duplicates'
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                error_exception=ActionError,
+                )
+
+
+class DepsExportAction(BaseAction):
+    PROMPT_SHORTCUT = 'depex'
+    DESC = 'Export dependencies'
+
+    def execute(self) -> None:
+        DEST_DIR_ENV_VAR = 'CARGO_HOME_EXPORT'
+
+        try:
+            dest_dir = os.environ[DEST_DIR_ENV_VAR]
+        except KeyError:
+            raise ActionError(f'"{DEST_DIR_ENV_VAR}" environment variable not found')
+
+        if not Path(dest_dir).is_dir():
+            raise ActionError(f'Destination dir "{dest_dir}" not found')
+
+        env = os.environ.copy()
+        env['CARGO_HOME'] = dest_dir
+
+        print('Export dependencies...\n')
+        command = 'cargo fetch'
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                env=env,
+                error_exception=ActionError,
+                )
+
+
+class FormatAction(BaseAction):
+    PROMPT_SHORTCUT = 'f'
+    CLI_COMMAND = 'fmt'
+    DESC = 'Format'
+
+    def execute(self) -> None:
+        print('Formatting...')
+
+        command = 'cargo fmt'
+
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                error_exception=ActionError,
+                )
+
+
+class OpenExplorerAction(BaseAction):
+    PROMPT_SHORTCUT = 'expl'
+    DESC = 'Open Windows explorer'
+
+    def is_active(self) -> bool:
+        return IS_WINDOWS
+
+    def execute(self) -> None:
+        os.startfile(ROOT_DIR)
+
+
+class OpenTerminalAction(BaseAction):
+    PROMPT_SHORTCUT = 'cmd'
+    DESC = 'Open Windows terminal'
+
+    def is_active(self) -> bool:
+        return IS_WINDOWS
+
+    def execute(self) -> None:
+        subprocess.Popen("cmd.exe /K", cwd=ROOT_DIR, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 class ClsAction(BaseAction):
