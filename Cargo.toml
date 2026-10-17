@@ -20,4 +20,4 @@ str_to_string = "warn"
 # cargo = "warn"
 
 [dependencies]
-regex = "1.13"
+regex = "1.13.1"
