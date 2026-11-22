@@ -14,7 +14,7 @@ mod tests {
 
     #[test]
     fn test_check_email() {
-        assert_eq!(check_email("user@example2.com"), true);
-        assert_eq!(check_email("us@er@example.com"), false);
+        assert!(check_email("user@example2.com"));
+        assert!(!check_email("us@er@example.com"));
     }
 }
