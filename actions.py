@@ -488,6 +488,40 @@ class RebuildAction(BaseAction):
                 )
 
 
+class CheckAction(BaseAction):
+    PROMPT_SHORTCUT = 'chk'
+    DESC = 'Check'
+
+    def execute(self) -> None:
+        profile = self.manager.active_profile
+        command = f'cargo check --profile {profile} --all-targets'
+
+        print(f'Checking ({profile})...')
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                env=get_build_env(profile),
+                error_exception=ActionError,
+                )
+
+
+class ClippyAction(BaseAction):
+    PROMPT_SHORTCUT = 'clip'
+    DESC = 'Clippy'
+
+    def execute(self) -> None:
+        profile = self.manager.active_profile
+        command = f'cargo clippy --profile {profile} --all-targets'
+
+        print(f'Running clippy ({profile})...')
+        Console.run_shell_command(
+                command=command,
+                cwd=ROOT_DIR,
+                env=get_build_env(profile),
+                error_exception=ActionError,
+                )
+
+
 class RunAction(BaseAction):
     PROMPT_SHORTCUT = 'r'
     CLI_COMMAND = 'run'
